@@ -19,6 +19,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('reminders.urls')),  # Include the reminders app URLs
+    path('', include('reminder.urls')),  # Route all root URLs to the reminder app
 ]
+
 

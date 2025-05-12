@@ -8,23 +8,27 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ReminderCreateView(APIView):
+    """
+    API view to create a new reminder.
+    Logs data and checks timezone awareness of the remind_at field.
+    """
+
     def post(self, request, *args, **kwargs):
         serializer = ReminderSerializer(data=request.data)
 
-        if serializer.is_valid():
-            # Log validated data
-            logger.info(f"Validated data: {serializer.validated_data}")
-            
-            # Check reminder_at timezone awareness before saving
-            if 'remind_at' in serializer.validated_data:
-                remind_at = serializer.validated_data['remind_at']
-                logger.info(f"remind_at before save: {remind_at}, is_aware: {timezone.is_aware(remind_at)}")
-            
-            # Save the reminder to the database
-            reminder = serializer.save()
-            
-            # Check the saved instance
-            logger.info(f"Saved reminder remind_at: {reminder.remind_at}, is_aware: {timezone.is_aware(reminder.remind_at)}")
-            
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid():
+            logger.warning(f"Invalid reminder data: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        validated_data = serializer.validated_data
+        logger.info(f"Validated data: {validated_data}")
+
+        remind_at = validated_data.get('remind_at')
+        if remind_at:
+            logger.info(f"remind_at (pre-save): {remind_at} | Timezone aware: {timezone.is_aware(remind_at)}")
+
+        reminder = serializer.save()
+
+        logger.info(f"Saved reminder ID: {reminder.id} | remind_at (post-save): {reminder.remind_at} | Timezone aware: {timezone.is_aware(reminder.remind_at)}")
+
+        return Response(ReminderSerializer(reminder).data, status=status.HTTP_201_CREATED)
